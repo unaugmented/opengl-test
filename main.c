@@ -36,16 +36,13 @@ enum {
 
 //------------------------------------------------------------------------------
 
-static Vao vaos[ SHAPE_MAX ];
-static Camera camera;
-static Texture textures[ TEXTURE_MAX ];
 static int camera_changed;
 static int cull = 0;
 static int cur_angle = 0;
 static int width = 800;
 static int height = 450;
-static float mx = 0;
-static float my = 0;
+static float mx = 0.0f;
+static float my = 0.0f;
 
 static const float MOVEMENT_SPEED = 0.01f;
 static const float STRIDE_SPEED = 0.01f;
@@ -61,6 +58,9 @@ static double delta_t = 0.0f;
 static float speeds[ 6 ];
 static float cam_angles[ 3 ];
 
+static Camera camera;
+static Vao vaos[ SHAPE_MAX ];
+static Texture textures[ TEXTURE_MAX ];
 static Vector_3d plane_position;
 static Quaternion plane_rotation;
 static Perspective perspective;
@@ -435,6 +435,8 @@ int main( int argc, char** argv ) {
 					} else if( ( XK_minus == key_sym )
 						|| ( XK_KP_Subtract == key_sym ) )
 					{
+						speeds[ 5 ] = ROTATION_SPEED;
+
 						if( ShiftMask & event.xkey.state ) {
 							cur_angle = upd_cur_angle( -1 );
 						} else {
@@ -443,11 +445,14 @@ int main( int argc, char** argv ) {
 								cam_angles[ 0 ], cam_angles[ 1 ], cam_angles[ 2 ] };
 							quaternion_from_euler_v( &camera.rotation, v );
 							quaternion_normalize( &camera.rotation );
+
 							camera_changed = 1;
 						}
 					} else if( ( XK_plus == key_sym )
 						|| ( XK_KP_Add == key_sym ) )
 					{
+						speeds[ 5 ] = ROTATION_SPEED;
+
 						if( ShiftMask & event.xkey.state ) {
 							cur_angle = upd_cur_angle( 1 );
 						} else {
@@ -456,6 +461,7 @@ int main( int argc, char** argv ) {
 								cam_angles[ 0 ], cam_angles[ 1 ], cam_angles[ 2 ] };
 							quaternion_from_euler_v( &camera.rotation, v );
 							quaternion_normalize( &camera.rotation );
+
 							camera_changed = 1;
 						}
 					} else if( XK_F12 == key_sym ) {
