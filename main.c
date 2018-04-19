@@ -1,4 +1,5 @@
 /* gcc -Wall -O2 -o test main.c -lm -ldl -lX11 -lXi -lXrandr -lGL */
+// https://github.com/unaugmented/opengl-test
 
 #include <malloc.h>
 #include <stdio.h>
@@ -39,7 +40,7 @@ enum {
 static int camera_changed;
 static int cull = 0;
 static int cur_angle = 0;
-static int width = 800;
+static int width = 800; // 16 : 9
 static int height = 450;
 static float mx = 0.0f;
 static float my = 0.0f;
@@ -47,7 +48,7 @@ static float my = 0.0f;
 static const float MOVEMENT_SPEED = 0.01f;
 static const float STRIDE_SPEED = 0.01f;
 static const float ROTATION_SPEED = 0.17f; // 10 degrees
-static const double dt_f = 0.01f;
+static const double dt_f = 0.01f; // Multiplied by delta t in camera movement.
 static const Vector_3d X_AXIS = { 1.0f, 0.0f, 0.0f };
 static const Vector_3d Y_AXIS = { 0.0f, 1.0f, 0.0f };
 static const Vector_3d Z_AXIS = { 0.0f, 0.0f, 1.0f };
@@ -177,8 +178,8 @@ int upd_cur_angle( int dir ) {
 	int a = cur_angle + dir;
 
 	if( a < 0 ) {
-		a = 2;
-	} else if( a > 2 ) {
+		a = 1;
+	} else if( a > 1 ) {
 		a = 0;
 	}
 	return a;
@@ -198,21 +199,21 @@ void translate_camera( double dt ) {
 void rotate_camera( double dt ) {
 	Quaternion q, r;
 	speeds[ 4 ] = dt * approach( speeds[ 5 ], speeds[ 4 ], dt * dt_f );
-	quaternion_from_axis_angle( &r, Y_AXIS, -mx * speeds[ 4 ] );
-	quaternion_from_axis_angle( &q, X_AXIS, -my * speeds[ 4 ] );
+	quaternion_from_axis_angle( &r, Y_AXIS, radians( -mx * speeds[ 4 ] ) );
+	quaternion_from_axis_angle( &q, X_AXIS, radians( -my * speeds[ 4 ] ) );
 	quaternion_mul_quaternion( &q, &r, &q );
 	quaternion_mul_quaternion( &q, &camera.rotation, &camera.rotation );
 	quaternion_normalize( &camera.rotation );
 
 	if( speeds[ 4 ] > speeds[ 5 ] ) {
 		speeds[ 5 ] = 0.0f;
+		mx = my = 0.0f;
 	}
-	mx = my = 0;
 }
 
 void update_camera( double dt ) {
 	if( camera_changed ) {
-		rotate_camera( dt );
+//		rotate_camera( dt );
 		translate_camera( dt );
 		quaternion_to_matrix( &camera.rotation, &view_matrix );
 		matrix_4x4_set_neg_translation_v( &view_matrix, camera.position );
@@ -435,34 +436,42 @@ int main( int argc, char** argv ) {
 					} else if( ( XK_minus == key_sym )
 						|| ( XK_KP_Subtract == key_sym ) )
 					{
-						speeds[ 5 ] = ROTATION_SPEED;
-
 						if( ShiftMask & event.xkey.state ) {
 							cur_angle = upd_cur_angle( -1 );
 						} else {
+							if( 0 == cur_angle ) {
+								mx -= 1.0f;
+							} else {
+								my -= 1.0f;
+							}
+//							speeds[ 5 ] = ROTATION_SPEED;
+							camera_changed = 1;
+
 							cam_angles[ cur_angle ] -= radians( 1.0f );
 							Vector_3d v = {
 								cam_angles[ 0 ], cam_angles[ 1 ], cam_angles[ 2 ] };
 							quaternion_from_euler_v( &camera.rotation, v );
 							quaternion_normalize( &camera.rotation );
-
-							camera_changed = 1;
 						}
 					} else if( ( XK_plus == key_sym )
 						|| ( XK_KP_Add == key_sym ) )
 					{
-						speeds[ 5 ] = ROTATION_SPEED;
-
 						if( ShiftMask & event.xkey.state ) {
 							cur_angle = upd_cur_angle( 1 );
 						} else {
+
+							if( 0 == cur_angle ) {
+								mx += 1.0f;
+							} else {
+								my += 1.0f;
+							}
+//							speeds[ 5 ] = ROTATION_SPEED;
+							camera_changed = 1;
 							cam_angles[ cur_angle ] += radians( 1.0f );
 							Vector_3d v = {
 								cam_angles[ 0 ], cam_angles[ 1 ], cam_angles[ 2 ] };
 							quaternion_from_euler_v( &camera.rotation, v );
 							quaternion_normalize( &camera.rotation );
-
-							camera_changed = 1;
 						}
 					} else if( XK_F12 == key_sym ) {
 						toggle_culling( );
